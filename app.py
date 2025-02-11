@@ -1,73 +1,122 @@
 from flask import Flask, request, jsonify
+from model7 import TravelRecommender
 import json
-from model5 import TravelRecommender  # Make sure this file contains your updated TravelRecommender
+from functools import wraps
+import numpy as np
 
 app = Flask(__name__)
 
-# Load data from JSON file and initialize the recommender
-with open("expanded_data.json") as f:
-    data = json.load(f)
+# Global variable to store our model
+recommender = None
 
-recommender = TravelRecommender(data)
+def initialize_model():
+    """Initialize the recommender model with data"""
+    global recommender
+    try:
+        with open("even_larger_dataset.json", "r") as file:
+            data = json.load(file)
+        recommender = TravelRecommender(data)
+        recommender.train_model(vector_size=100, window=5, min_count=1)
+        return True
+    except Exception as e:
+        print(f"Error initializing model: {str(e)}")
+        return False
 
-@app.route("/recommend", methods=["GET"])
-def get_recommendations():
-    """
-    GET /recommend supports two modes:
-    1. If 'user_name' is provided in the query parameters, generate recommendations
-       for an existing user.
-    2. If 'placesVisited' is provided (as a comma-separated list), generate recommendations
-       based on the provided places.
-    """
-    top_n = request.args.get("top_n", default=5, type=int)
-    
-    # Mode 1: Existing user recommendation using user_name
-    user_name = request.args.get("user_name")
-    if user_name:
-        recommendations = recommender.recommend(user_name, top_n)
-        if isinstance(recommendations, str):
-            # This means an error occurred (for example, user not found)
-            return jsonify({"error": recommendations}), 404
-        return jsonify({"user": user_name, "recommendations": recommendations})
-    
-    # Mode 2: Virtual user recommendation using placesVisited query parameter
-    places_str = request.args.get("placesVisited")
-    if places_str:
-        # Expecting a comma separated list of place names
-        places_visited = [place.strip() for place in places_str.split(",")]
-        recommendations = recommender.recommend_from_places(places_visited, top_n)
-        return jsonify({
-            "placesVisited": places_visited,
-            "recommendations": recommendations
-        })
-    
-    # If neither parameter is provided, return an error
-    return jsonify({"error": "Missing required parameter: either 'user_name' or 'placesVisited'"}), 400
+def require_model(f):
+    """Decorator to ensure model is initialized before handling requests"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if recommender is None:
+            return jsonify({
+                "error": "Model not initialized",
+                "message": "Please wait for the model to initialize"
+            }), 503
+        return f(*args, **kwargs)
+    return decorated_function
 
-@app.route("/recommend_from_places", methods=["POST"])
-def recommend_from_places():
-    """
-    POST /recommend_from_places expects a JSON payload with the following structure:
-    {
-        "placesVisited": ["Place_A", "Place_B", "Place_C"],
-        "top_n": 5  // Optional
-    }
-    """
-    if not request.is_json:
-        return jsonify({"error": "Request payload must be in JSON format"}), 400
-
-    payload = request.get_json()
-    places_visited = payload.get("placesVisited")
-    top_n = payload.get("top_n", 5)
-    
-    if not places_visited or not isinstance(places_visited, list):
-        return jsonify({"error": "Missing or invalid 'placesVisited' field in JSON payload"}), 400
-    
-    recommendations = recommender.recommend_from_places(places_visited, top_n)
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Endpoint to check API health and model status"""
     return jsonify({
-        "placesVisited": places_visited,
-        "recommendations": recommendations
+        "status": "healthy",
+        "model_loaded": recommender is not None
     })
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+@app.route('/api/places', methods=['GET'])
+@require_model
+def get_available_places():
+    """Get list of all available places in the model"""
+    return jsonify({
+        "places": list(recommender.all_places)
+    })
+
+@app.route('/api/recommend', methods=['POST'])
+@require_model
+def get_recommendations():
+    """Get travel recommendations based on input places"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'places' not in data:
+            return jsonify({
+                "error": "Invalid request",
+                "message": "Please provide a list of places in the request body"
+            }), 400
+            
+        input_places = data['places']
+        top_n = data.get('top_n', 5)  # Default to 5 recommendations
+        
+        # Validate input places
+        invalid_places = [place for place in input_places if place not in recommender.all_places]
+        if invalid_places:
+            return jsonify({
+                "error": "Invalid places",
+                "message": f"The following places were not found in our database: {', '.join(invalid_places)}",
+                "valid_places": list(recommender.all_places)
+            }), 400
+            
+        # Get recommendations
+        recommendations = recommender.recommend_from_places(input_places, top_n=top_n)
+        
+        # Format recommendations without tags
+        formatted_recommendations = [
+            {
+                'place': rec['place'],
+                'similarity': rec['similarity']
+            }
+            for rec in recommendations
+        ]
+        
+        return jsonify({
+            "input_places": input_places,
+            "recommendations": formatted_recommendations
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "error": "Server error",
+            "message": str(e)
+        }), 500
+
+@app.route('/api/place_info/<place>', methods=['GET'])
+@require_model
+def get_place_info(place):
+    """Get information about a specific place"""
+    if place not in recommender.all_places:
+        return jsonify({
+            "error": "Place not found",
+            "message": f"'{place}' was not found in our database"
+        }), 404
+        
+    return jsonify({
+        "place": place,
+        "tags": recommender.place_profiles[place]
+    })
+
+if __name__ == '__main__':
+    # Initialize the model before starting the server
+    if initialize_model():
+        # Run the Flask app
+        app.run(host='0.0.0.0', port=5000, debug=True)
+    else:
+        print("Failed to initialize model. Exiting...")
