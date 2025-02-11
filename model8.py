@@ -1,278 +1,234 @@
 import numpy as np
 from gensim.models import Word2Vec
-from sklearn.model_selection import train_test_split
 from collections import defaultdict
 import json
-import time
+from sklearn.preprocessing import MinMaxScaler
+from geopy.distance import geodesic
 
-class TravelRecommender:
+class EnhancedTravelRecommender:
     def __init__(self, data):
         self.data = data
         self.user_profiles = {}
-        self.place_profiles = defaultdict(list)
+        self.place_profiles = defaultdict(dict)
         self.word2vec_model = None
         self.all_places = set()
         self.all_tags = set()
+        self.all_travel_styles = set()
+        self.budget_categories = set()
+        self.regions = set()
+        self.scaler = MinMaxScaler()
         
     def preprocess_data(self):
-        """Process raw data to create training sequences"""
+        """Process data to create enhanced training sequences and profiles"""
         sequences = []
+        locations = []
+        durations = []
         
-        # Create sequences for each user's travel history
         for user in self.data:
+            # Collect travel styles
+            self.all_travel_styles.update(user['travel_style'])
+            
             user_seq = []
             for visit in user['placesVisited']:
+                # Collect basic info
                 self.all_places.add(visit['place'])
-                user_seq.append(visit['place'])
-                # Add tags to sequence
-                for tag in visit['tags']:
-                    self.all_tags.add(tag)
-                    user_seq.append(tag)
+                self.all_tags.update(visit['tags'])
+                self.budget_categories.add(visit['budget_category'])
+                self.regions.add(visit['region'])
+                
+                # Create sequence with place and features
+                user_seq.extend([
+                    visit['place'],
+                    visit['budget_category'],
+                    visit['region'],
+                    *visit['tags']
+                ])
+                
+                # Store location data for scaling
+                locations.append(visit['coordinates'])
+                durations.append(visit['duration_days'])
+                
+                # Build comprehensive place profile
+                self.place_profiles[visit['place']] = {
+                    'tags': visit['tags'],
+                    'budget_category': visit['budget_category'],
+                    'coordinates': visit['coordinates'],
+                    'region': visit['region'],
+                    'duration_days': visit['duration_days']
+                }
+            
             sequences.append(user_seq)
             
-            # Store user profile
+            # Build comprehensive user profile
             self.user_profiles[user['name']] = {
                 'gender': user['gender'],
                 'age': user['age'],
-                'places': [v['place'] for v in user['placesVisited']],
-                'tags': [tag for v in user['placesVisited'] for tag in v['tags']]
+                'origin': user['origin'],
+                'travel_style': user['travel_style'],
+                'visited_places': [v['place'] for v in user['placesVisited']],
+                'preferred_regions': set(v['region'] for v in user['placesVisited']),
+                'preferred_budget': self._get_preferred_budget(user['placesVisited']),
+                'avg_trip_duration': np.mean([v['duration_days'] for v in user['placesVisited']])
             }
-            
-            # Store place profiles
-            for visit in user['placesVisited']:
-                self.place_profiles[visit['place']].extend(visit['tags'])
+        
+        # Scale location coordinates
+        self.locations_scaler = MinMaxScaler()
+        self.locations_scaler.fit(locations)
+        
+        # Scale durations
+        self.duration_scaler = MinMaxScaler()
+        self.duration_scaler.fit(np.array(durations).reshape(-1, 1))
         
         return sequences
     
+    def _get_preferred_budget(self, visits):
+        """Determine user's preferred budget category"""
+        budget_counts = defaultdict(int)
+        for visit in visits:
+            budget_counts[visit['budget_category']] += 1
+        return max(budget_counts.items(), key=lambda x: x[1])[0]
+    
     def train_model(self, vector_size=100, window=5, min_count=1):
-        """Train Word2Vec model on travel sequences"""
+        """Train Word2Vec model on enhanced sequences"""
         sequences = self.preprocess_data()
-        self.word2vec_model = Word2Vec(sentences=sequences,
-                                     vector_size=vector_size,
-                                     window=window,
-                                     min_count=min_count,
-                                     workers=4)
-        
-    def get_place_embedding(self, place):
-        """Get combined embedding for a place and its tags"""
-        if place not in self.place_profiles:
-            return None
+        self.word2vec_model = Word2Vec(
+            sentences=sequences,
+            vector_size=vector_size,
+            window=window,
+            min_count=min_count,
+            workers=4
+        )
+    
+    def get_place_similarity(self, place1, place2):
+        """Calculate comprehensive similarity between two places"""
+        if place1 not in self.place_profiles or place2 not in self.place_profiles:
+            return 0.0
             
-        vectors = [self.word2vec_model.wv[place]]
-        for tag in self.place_profiles[place]:
-            if tag in self.word2vec_model.wv:
-                vectors.append(self.word2vec_model.wv[tag])
-                
-        return np.mean(vectors, axis=0)
-    
-    def get_places_embedding(self, places):
-        """Get combined embedding for multiple places"""
-        vectors = []
+        p1 = self.place_profiles[place1]
+        p2 = self.place_profiles[place2]
         
-        for place in places:
-            if place not in self.all_places:
-                print(f"Warning: {place} not found in training data")
-                continue
-                
-            place_embedding = self.get_place_embedding(place)
-            if place_embedding is not None:
-                vectors.append(place_embedding)
+        # Calculate various similarity components
+        tag_sim = len(set(p1['tags']) & set(p2['tags'])) / len(set(p1['tags']) | set(p2['tags']))
+        budget_sim = 1.0 if p1['budget_category'] == p2['budget_category'] else 0.0
+        region_sim = 1.0 if p1['region'] == p2['region'] else 0.0
         
-        return np.mean(vectors, axis=0) if vectors else None
+        # Geographic distance similarity (inverse of normalized distance)
+        geo_dist = geodesic(p1['coordinates'], p2['coordinates']).kilometers
+        max_dist = 3000  # approximate max distance in India
+        geo_sim = 1 - min(geo_dist / max_dist, 1)
+        
+        # Duration similarity
+        dur_diff = abs(p1['duration_days'] - p2['duration_days'])
+        dur_sim = 1 - min(dur_diff / 7, 1)  # normalize by a week
+        
+        # Combine similarities with weights
+        weights = {
+            'tag': 0.3,
+            'budget': 0.2,
+            'region': 0.2,
+            'geo': 0.2,
+            'duration': 0.1
+        }
+        
+        total_sim = (
+            weights['tag'] * tag_sim +
+            weights['budget'] * budget_sim +
+            weights['region'] * region_sim +
+            weights['geo'] * geo_sim +
+            weights['duration'] * dur_sim
+        )
+        
+        return total_sim
     
-    def recommend_from_places(self, input_places, top_n=5):
-        """Recommend places based on a list of input places"""
-        combined_embedding = self.get_places_embedding(input_places)
-        if combined_embedding is None:
+    def recommend_places(self, input_places, user_name=None, top_n=5):
+        """Generate recommendations based on input places and optionally user profile"""
+        if not input_places:
             return []
-            
-        # Calculate similarity with all places
-        place_scores = []
+        
+        # Calculate base similarities
+        place_scores = defaultdict(float)
         input_places_set = set(input_places)
         
-        for place in self.all_places:
-            if place in input_places_set:
+        for candidate_place in self.all_places:
+            if candidate_place in input_places_set:
                 continue
                 
-            place_embedding = self.get_place_embedding(place)
-            if place_embedding is not None:
-                similarity = np.dot(combined_embedding, place_embedding) / (
-                    np.linalg.norm(combined_embedding) * np.linalg.norm(place_embedding)
-                )
-                place_scores.append((place, similarity))
+            # Calculate average similarity to input places
+            similarities = [
+                self.get_place_similarity(input_place, candidate_place)
+                for input_place in input_places
+            ]
+            base_score = np.mean(similarities)
+            
+            # Apply user preferences if user_name is provided
+            if user_name and user_name in self.user_profiles:
+                user_profile = self.user_profiles[user_name]
+                candidate_profile = self.place_profiles[candidate_place]
+                
+                # Calculate preference boosts
+                region_boost = 1.2 if candidate_profile['region'] in user_profile['preferred_regions'] else 1.0
+                budget_boost = 1.2 if candidate_profile['budget_category'] == user_profile['preferred_budget'] else 1.0
+                
+                # Calculate distance from user's origin
+                origin_dist = geodesic(
+                    user_profile['origin']['coordinates'],
+                    candidate_profile['coordinates']
+                ).kilometers
+                distance_penalty = 1.0 - (min(origin_dist, 3000) / 3000) * 0.2
+                
+                # Apply all modifiers
+                base_score *= region_boost * budget_boost * distance_penalty
+            
+            place_scores[candidate_place] = base_score
         
-        # Sort by similarity and return top N recommendations
-        recommendations = sorted(place_scores, key=lambda x: x[1], reverse=True)[:top_n]
+        # Sort and return top recommendations
+        recommendations = sorted(
+            place_scores.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )[:top_n]
+        
         return [
             {
                 'place': place,
-                'similarity': float(score),
-                'tags': self.place_profiles[place]
+                'similarity_score': score,
+                'tags': self.place_profiles[place]['tags'],
+                'budget_category': self.place_profiles[place]['budget_category'],
+                'region': self.place_profiles[place]['region'],
+                'duration_days': self.place_profiles[place]['duration_days']
             }
             for place, score in recommendations
-        ]   
-
-class TravelRecommenderEvaluator:
-    def __init__(self, data, test_size=0.2, random_state=42):
-        self.full_data = data
-        self.test_size = test_size
-        self.random_state = random_state
-        self.train_data = []
-        self.test_data = []
-        self.recommender = None
-        
-    def split_user_data(self):
-        """Split each user's visited places into train and test sets"""
-        train_data = []
-        test_data = []
-        
-        # Process all users at once instead of one by one
-        for user in self.full_data:
-            places = user['placesVisited']
-            if len(places) < 2:
-                train_data.append(user)
-                continue
-                
-            # Split places
-            train_places, test_places = train_test_split(
-                places, 
-                test_size=self.test_size,
-                random_state=self.random_state
-            )
-            
-            if train_places and test_places:
-                train_user = dict(user)
-                test_user = dict(user)
-                train_user['placesVisited'] = train_places
-                test_user['placesVisited'] = test_places
-                train_data.append(train_user)
-                test_data.append(test_user)
-        
-        return train_data, test_data
-    
-    def calculate_metrics(self, k_values=[5, 10]):  # Reduced k values
-        """Calculate metrics with optimization"""
-        print("Splitting data...")
-        start_time = time.time()
-        self.train_data, self.test_data = self.split_user_data()
-        
-        print("Training model...")
-        self.recommender = TravelRecommender(self.train_data)
-        self.recommender.train_model()
-        
-        print("Calculating metrics...")
-        metrics = {
-            'precision': defaultdict(list),
-            'recall': defaultdict(list),
-            'hit_rate': defaultdict(list)
-        }
-        
-        # Pre-calculate place embeddings
-        place_embeddings = {}
-        for place in self.recommender.all_places:
-            place_embeddings[place] = self.recommender.get_place_embedding(place)
-        
-        total_users = len(self.test_data)
-        for idx, test_user in enumerate(self.test_data, 1):
-            if idx % 10 == 0:  # Progress indicator
-                print(f"Processing user {idx}/{total_users}")
-                
-            actual_places = set(visit['place'] for visit in test_user['placesVisited'])
-            
-            # Get training places
-            train_user = next(u for u in self.train_data if u['name'] == test_user['name'])
-            input_places = [visit['place'] for visit in train_user['placesVisited']]
-            
-            # Get recommendations using pre-calculated embeddings
-            max_k = max(k_values)
-            recs = self._get_recommendations_optimized(
-                input_places, 
-                place_embeddings, 
-                max_k
-            )
-            
-            # Calculate metrics for each k
-            for k in k_values:
-                top_k_recs = recs[:k]
-                relevant_and_recommended = len(set(top_k_recs) & actual_places)
-                
-                metrics['precision'][k].append(
-                    relevant_and_recommended / k if k > 0 else 0
-                )
-                metrics['recall'][k].append(
-                    relevant_and_recommended / len(actual_places) if actual_places else 0
-                )
-                metrics['hit_rate'][k].append(
-                    1 if relevant_and_recommended > 0 else 0
-                )
-        
-        # Calculate average metrics
-        results = {}
-        for metric_name, k_values_dict in metrics.items():
-            results[metric_name] = {
-                k: np.mean(values) for k, values in k_values_dict.items()
-            }
-        
-        print(f"\nTotal evaluation time: {time.time() - start_time:.2f} seconds")
-        return results
-    
-    def _get_recommendations_optimized(self, input_places, place_embeddings, top_n):
-        """Optimized recommendation calculation using pre-computed embeddings"""
-        vectors = []
-        for place in input_places:
-            if place in place_embeddings:
-                vectors.append(place_embeddings[place])
-        
-        if not vectors:
-            return []
-            
-        combined_embedding = np.mean(vectors, axis=0)
-        
-        # Calculate similarities
-        place_scores = []
-        input_places_set = set(input_places)
-        
-        for place, embedding in place_embeddings.items():
-            if place not in input_places_set:
-                similarity = np.dot(combined_embedding, embedding) / (
-                    np.linalg.norm(combined_embedding) * np.linalg.norm(embedding)
-                )
-                place_scores.append((place, similarity))
-        
-        # Sort and return top N places
-        return [place for place, _ in sorted(
-            place_scores, 
-            key=lambda x: x[1], 
-            reverse=True
-        )[:top_n]]
+        ]
 
 def main():
-    print("Loading data...")
-    start_time = time.time()
-    
-    with open("even_larger_dataset.json", "r") as file:
+    # Load your data
+    with open("new_dataset.json", "r") as file:
         data = json.load(file)
     
-    print(f"Data loaded in {time.time() - start_time:.2f} seconds")
+    # Initialize and train recommender
+    recommender = EnhancedTravelRecommender(data)
+    recommender.train_model()
     
-    # Initialize evaluator with smaller test size
-    evaluator = TravelRecommenderEvaluator(data, test_size=0.1)  # Reduced test size
+    # Example recommendation
+    input_places = ["Sundarbans", "Dandeli"]
+    user_name = "Neha_776"  # Optional: provide user name for personalized recommendations
     
-    # Calculate and print metrics
-    print("\nStarting evaluation...")
-    metrics = evaluator.calculate_metrics()
+    recommendations = recommender.recommend_places(
+        input_places=input_places,
+        user_name=user_name,
+        top_n=3
+    )
     
-    print("\nEvaluation Results:")
-    print("=" * 50)
-    for metric_name, k_values in metrics.items():
-        print(f"\n{metric_name.upper()}:")
-        for k, value in k_values.items():
-            print(f"{metric_name}@{k}: {value:.3f}")
-    
-    print(f"\nDataset Statistics:")
-    print(f"Total users: {len(data)}")
-    print(f"Training users: {len(evaluator.train_data)}")
-    print(f"Test users: {len(evaluator.test_data)}")
+    print(f"\nRecommendations based on {', '.join(input_places)}")
+    print(f"Personalized for user: {user_name if user_name else 'No user'}")
+    print("\nRecommended Places:")
+    for rec in recommendations:
+        print(f"\nPlace: {rec['place']}")
+        print(f"Similarity Score: {rec['similarity_score']:.3f}")
+        print(f"Tags: {', '.join(rec['tags'])}")
+        print(f"Budget Category: {rec['budget_category']}")
+        print(f"Region: {rec['region']}")
+        print(f"Recommended Duration: {rec['duration_days']} days")
 
 if __name__ == "__main__":
     main()
