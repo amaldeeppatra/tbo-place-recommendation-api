@@ -1,0 +1,641 @@
+[
+  {
+    "age": 20,
+    "origin": {
+      "country": "India",
+      "region": "West",
+      "coordinates": [
+        25.0854,
+        74.2125
+      ]
+    },
+    "travel_style": [
+      "Historical",
+      "Luxury"
+    ],
+    "placesVisited": [
+      {
+        "place": "Udaipur",
+        "tags": [
+          "Historical",
+          "Luxury",
+          "Cultural"
+        ],
+        "duration_days": 2,
+        "budget_category": "budget",
+        "coordinates": [
+          24.5854,
+          73.7125
+        ],
+        "region": "West"
+      }
+    ]
+  },
+  {
+    "age": 21,
+    "origin": {
+      "country": "India",
+      "region": "West",
+      "coordinates": [
+        27.4157,
+        71.4083
+      ]
+    },
+    "travel_style": [
+      "Desert",
+      "Adventure"
+    ],
+    "placesVisited": [
+      {
+        "place": "Jaisalmer",
+        "tags": [
+          "Desert",
+          "Adventure",
+          "Historical"
+        ],
+        "duration_days": 3,
+        "budget_category": "midrange",
+        "coordinates": [
+          26.9157,
+          70.9083
+        ],
+        "region": "West"
+      }
+    ]
+  },
+  {
+    "age": 22,
+    "origin": {
+      "country": "India",
+      "region": "North",
+      "coordinates": [
+        30.5869,
+        78.7676
+      ]
+    },
+    "travel_style": [
+      "Adventure",
+      "Spiritual"
+    ],
+    "placesVisited": [
+      {
+        "place": "Rishikesh",
+        "tags": [
+          "Adventure",
+          "Spiritual",
+          "Wellness"
+        ],
+        "duration_days": 4,
+        "budget_category": "luxury",
+        "coordinates": [
+          30.0869,
+          78.2676
+        ],
+        "region": "North"
+      }
+    ]
+  },
+  {
+    "age": 23,
+    "origin": {
+      "country": "India",
+      "region": "South",
+      "coordinates": [
+        12.8375,
+        76.3069
+      ]
+    },
+    "travel_style": [
+      "Nature",
+      "Hill Station"
+    ],
+    "placesVisited": [
+      {
+        "place": "Coorg",
+        "tags": [
+          "Nature",
+          "Hill Station",
+          "Wildlife"
+        ],
+        "duration_days": 5,
+        "budget_category": "budget",
+        "coordinates": [
+          12.3375,
+          75.8069
+        ],
+        "region": "South"
+      }
+    ]
+  },
+  {
+    "age": 24,
+    "origin": {
+      "country": "India",
+      "region": "East",
+      "coordinates": [
+        26.0788,
+        92.3933
+      ]
+    },
+    "travel_style": [
+      "Nature",
+      "Hill Station"
+    ],
+    "placesVisited": [
+      {
+        "place": "Shillong",
+        "tags": [
+          "Nature",
+          "Hill Station",
+          "Offbeat"
+        ],
+        "duration_days": 6,
+        "budget_category": "midrange",
+        "coordinates": [
+          25.5788,
+          91.8933
+        ],
+        "region": "East"
+      }
+    ]
+  },
+  {
+    "age": 25,
+    "origin": {
+      "country": "India",
+      "region": "South",
+      "coordinates": [
+        15.049,
+        74.8185
+      ]
+    },
+    "travel_style": [
+      "Beach",
+      "Spiritual"
+    ],
+    "placesVisited": [
+      {
+        "place": "Gokarna",
+        "tags": [
+          "Beach",
+          "Spiritual",
+          "Offbeat"
+        ],
+        "duration_days": 7,
+        "budget_category": "luxury",
+        "coordinates": [
+          14.549,
+          74.3185
+        ],
+        "region": "South"
+      }
+    ]
+  },
+  {
+    "age": 26,
+    "origin": {
+      "country": "India",
+      "region": "West",
+      "coordinates": [
+        21.0519,
+        76.2033
+      ]
+    },
+    "travel_style": [
+      "Historical",
+      "Architecture"
+    ],
+    "placesVisited": [
+      {
+        "place": "Ajanta & Ellora",
+        "tags": [
+          "Historical",
+          "Architecture"
+        ],
+        "duration_days": 8,
+        "budget_category": "budget",
+        "coordinates": [
+          20.5519,
+          75.7033
+        ],
+        "region": "West"
+      }
+    ]
+  },
+  {
+    "age": 27,
+    "origin": {
+      "country": "India",
+      "region": "North",
+      "coordinates": [
+        32.7461,
+        78.5174
+      ]
+    },
+    "travel_style": [
+      "Adventure",
+      "Offbeat"
+    ],
+    "placesVisited": [
+      {
+        "place": "Spiti Valley",
+        "tags": [
+          "Adventure",
+          "Offbeat",
+          "Nature"
+        ],
+        "duration_days": 2,
+        "budget_category": "midrange",
+        "coordinates": [
+          32.2461,
+          78.0174
+        ],
+        "region": "North"
+      }
+    ]
+  },
+  {
+    "age": 28,
+    "origin": {
+      "country": "India",
+      "region": "East",
+      "coordinates": [
+        25.7867,
+        92.2214
+      ]
+    },
+    "travel_style": [
+      "Nature",
+      "Waterfalls"
+    ],
+    "placesVisited": [
+      {
+        "place": "Cherrapunji",
+        "tags": [
+          "Nature",
+          "Waterfalls",
+          "Adventure"
+        ],
+        "duration_days": 3,
+        "budget_category": "luxury",
+        "coordinates": [
+          25.2867,
+          91.7214
+        ],
+        "region": "East"
+      }
+    ]
+  },
+  {
+    "age": 29,
+    "origin": {
+      "country": "India",
+      "region": "South",
+      "coordinates": [
+        10.1067,
+        76.9318
+      ]
+    },
+    "travel_style": [
+      "Nature",
+      "Backwaters"
+    ],
+    "placesVisited": [
+      {
+        "place": "Kumarakom",
+        "tags": [
+          "Nature",
+          "Backwaters",
+          "Relaxation"
+        ],
+        "duration_days": 4,
+        "budget_category": "budget",
+        "coordinates": [
+          9.6067,
+          76.4318
+        ],
+        "region": "South"
+      }
+    ]
+  },
+  {
+    "age": 30,
+    "origin": {
+      "country": "India",
+      "region": "South",
+      "coordinates": [
+        12.2401,
+        93.1586
+      ]
+    },
+    "travel_style": [
+      "Beach",
+      "Adventure"
+    ],
+    "placesVisited": [
+      {
+        "place": "Andaman & Nicobar",
+        "tags": [
+          "Beach",
+          "Adventure",
+          "Nature"
+        ],
+        "duration_days": 5,
+        "budget_category": "midrange",
+        "coordinates": [
+          11.7401,
+          92.6586
+        ],
+        "region": "South"
+      }
+    ]
+  },
+  {
+    "age": 31,
+    "origin": {
+      "country": "India",
+      "region": "East",
+      "coordinates": [
+        28.0866,
+        92.3687
+      ]
+    },
+    "travel_style": [
+      "Nature",
+      "Spiritual"
+    ],
+    "placesVisited": [
+      {
+        "place": "Tawang",
+        "tags": [
+          "Nature",
+          "Spiritual",
+          "Adventure"
+        ],
+        "duration_days": 6,
+        "budget_category": "luxury",
+        "coordinates": [
+          27.5866,
+          91.8687
+        ],
+        "region": "East"
+      }
+    ]
+  },
+  {
+    "age": 32,
+    "origin": {
+      "country": "India",
+      "region": "West",
+      "coordinates": [
+        25.0926,
+        73.2156
+      ]
+    },
+    "travel_style": [
+      "Hill Station",
+      "Spiritual"
+    ],
+    "placesVisited": [
+      {
+        "place": "Mount Abu",
+        "tags": [
+          "Hill Station",
+          "Spiritual",
+          "Historical"
+        ],
+        "duration_days": 7,
+        "budget_category": "budget",
+        "coordinates": [
+          24.5926,
+          72.7156
+        ],
+        "region": "West"
+      }
+    ]
+  },
+  {
+    "age": 33,
+    "origin": {
+      "country": "India",
+      "region": "Central",
+      "coordinates": [
+        25.3318,
+        80.4199
+      ]
+    },
+    "travel_style": [
+      "Historical",
+      "Architecture"
+    ],
+    "placesVisited": [
+      {
+        "place": "Khajuraho",
+        "tags": [
+          "Historical",
+          "Architecture",
+          "Cultural"
+        ],
+        "duration_days": 8,
+        "budget_category": "midrange",
+        "coordinates": [
+          24.8318,
+          79.9199
+        ],
+        "region": "Central"
+      }
+    ]
+  },
+  {
+    "age": 34,
+    "origin": {
+      "country": "India",
+      "region": "West",
+      "coordinates": [
+        25.9383,
+        76.1361
+      ]
+    },
+    "travel_style": [
+      "Historical",
+      "Offbeat"
+    ],
+    "placesVisited": [
+      {
+        "place": "Bundi",
+        "tags": [
+          "Historical",
+          "Offbeat",
+          "Heritage"
+        ],
+        "duration_days": 2,
+        "budget_category": "luxury",
+        "coordinates": [
+          25.4383,
+          75.6361
+        ],
+        "region": "West"
+      }
+    ]
+  },
+  {
+    "age": 35,
+    "origin": {
+      "country": "India",
+      "region": "East",
+      "coordinates": [
+        25.1952,
+        85.4914
+      ]
+    },
+    "travel_style": [
+      "Spiritual",
+      "Heritage"
+    ],
+    "placesVisited": [
+      {
+        "place": "Bodh Gaya",
+        "tags": [
+          "Spiritual",
+          "Heritage",
+          "Historical"
+        ],
+        "duration_days": 3,
+        "budget_category": "budget",
+        "coordinates": [
+          24.6952,
+          84.9914
+        ],
+        "region": "East"
+      }
+    ]
+  },
+  {
+    "age": 36,
+    "origin": {
+      "country": "India",
+      "region": "East",
+      "coordinates": [
+        22.4497,
+        89.6833
+      ]
+    },
+    "travel_style": [
+      "Wildlife",
+      "Adventure"
+    ],
+    "placesVisited": [
+      {
+        "place": "Sundarbans",
+        "tags": [
+          "Wildlife",
+          "Adventure",
+          "Nature"
+        ],
+        "duration_days": 4,
+        "budget_category": "midrange",
+        "coordinates": [
+          21.9497,
+          89.1833
+        ],
+        "region": "East"
+      }
+    ]
+  },
+  {
+    "age": 37,
+    "origin": {
+      "country": "India",
+      "region": "West",
+      "coordinates": [
+        18.4237,
+        74.1586
+      ]
+    },
+    "travel_style": [
+      "Hill Station",
+      "Nature"
+    ],
+    "placesVisited": [
+      {
+        "place": "Mahabaleshwar",
+        "tags": [
+          "Hill Station",
+          "Nature",
+          "Trekking"
+        ],
+        "duration_days": 5,
+        "budget_category": "luxury",
+        "coordinates": [
+          17.9237,
+          73.6586
+        ],
+        "region": "West"
+      }
+    ]
+  },
+  {
+    "age": 38,
+    "origin": {
+      "country": "India",
+      "region": "North",
+      "coordinates": [
+        27.3467,
+        81.4462
+      ]
+    },
+    "travel_style": [
+      "Cultural",
+      "Food"
+    ],
+    "placesVisited": [
+      {
+        "place": "Lucknow",
+        "tags": [
+          "Cultural",
+          "Food",
+          "Historical"
+        ],
+        "duration_days": 6,
+        "budget_category": "budget",
+        "coordinates": [
+          26.8467,
+          80.9462
+        ],
+        "region": "North"
+      }
+    ]
+  },
+  {
+    "age": 39,
+    "origin": {
+      "country": "India",
+      "region": "South",
+      "coordinates": [
+        12.4139,
+        80.3145
+      ]
+    },
+    "travel_style": [
+      "Beach",
+      "French Colony"
+    ],
+    "placesVisited": [
+      {
+        "place": "Pondicherry",
+        "tags": [
+          "Beach",
+          "French Colony",
+          "Relaxation"
+        ],
+        "duration_days": 7,
+        "budget_category": "midrange",
+        "coordinates": [
+          11.9139,
+          79.8145
+        ],
+        "region": "South"
+      }
+    ]
+  }
+]
